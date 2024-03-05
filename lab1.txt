@@ -1,0 +1,239 @@
+CRC.java
+
+
+import java.util.*;
+public class crc {
+ public static void main(String args[]) {
+ Scanner s = new Scanner(System.in);
+ int n;
+ System.out.println("Enter the size of the data:");
+ n = s.nextInt();
+ int data[] = new int[n];
+ System.out.println("Enter the data, bit by bit:");
+ for (int i = 0; i < n; i++) {
+ data[i] = s.nextInt();
+ }
+ System.out.println("Enter the size of divisor:");
+ n = s.nextInt();
+ int divisor[] = new int[n];
+ System.out.println("Enter the divisor, bit by bit:");
+ for (int i = 0; i < n; i++)
+ divisor[i] = s.nextInt();
+ int remainder[] = divide(data, divisor);
+ System.out.println("\n The CRC code generated is :");
+ for (int i = 0; i < data.length; i++)
+ System.out.println(data[i]);
+ for (int i = 0; i < remainder.length; i++)
+ System.out.println(remainder[i]);
+ System.out.println();
+ int sent_data[] = new int[data.length + remainder.length - 1];
+ System.out.println("Enter the data to be sent :");
+ for (int i = 0; i < sent_data.length; i++)
+ sent_data[i] = s.nextInt();
+ receive(sent_data, divisor);
+ }
+ static int[] divide(int old_data[], int divisor[]) {
+ int remainder[], i;
+ int data[] = new int[old_data.length + divisor.length];
+ System.arraycopy(old_data, 0, data, 0, old_data.length);
+ System.out.println("Message bits after appending divisor.length-1 0's :");
+ for (i = 0; i < data.length - 1; i++)
+ System.out.println(data[i]);
+ remainder = new int[divisor.length];
+ System.arraycopy(data, 0, remainder, 0, divisor.length);
+ for (i = 0; i < old_data.length; i++) {
+ if (remainder[0] == 1) {
+ for (int j = 1; j < divisor.length; j++) {
+ remainder[j - 1] = exor(remainder[j], divisor[j]);
+ }
+ } 
+ else {
+ for (int j = 1; j < divisor.length; j++) 
+ remainder[j - 1] = exor(remainder[j], 0);
+ }
+ remainder[divisor.length - 1] = data[i + divisor.length];
+ }
+ return remainder;
+ }
+ static int exor(int a, int b) {
+ if (a == b)
+ return 0;
+ return 1;
+ }
+ static void receive(int data[], int divisor[]) {
+ int remainder[] = divide(data, divisor);
+ for (int i = 0; i < remainder.length; i++) {
+ if (remainder[i] != 0) {
+ System.out.println("There is an error in received data....");
+ return;
+ }
+ }
+ System.out.println("Data received without error.");
+ }
+}
+
+
+ Leaky .java
+
+import java.util.Random;
+import java.util.Scanner;
+public class leaky {
+ public static void main(String[] args) {
+ int drop = 0, mini, orate, bsize, nsec, premain = 0;
+ int[] packet = new int[100];
+ Scanner scanner = new Scanner(System.in);
+ System.out.print("Enter the bucket size: ");
+ bsize = scanner.nextInt();
+ System.out.print("Enter the output rate: ");
+ orate = scanner.nextInt();
+ System.out.print("Enter the number of seconds to simulate: ");
+ nsec = scanner.nextInt();
+ Random rand = new Random();
+ for (int i = 0; i < nsec; i++) {
+ packet[i] = (rand.nextInt(1000));
+ }
+ System.out.println("----------------------------------------------------------------------");
+ System.out.println("Seconds Packets_received Packets_sent Packets_left 
+Packets_dropped");
+ System.out.println("----------------------------------------------------------------------");
+ for (int i = 0; i < nsec; i++) {
+ premain += packet[i];
+ if (premain > bsize) {
+ drop = premain - bsize;
+ premain = bsize;
+ System.out.print((i + 1) + " ");
+ System.out.print(packet[i] + " ");
+ mini = Math.min(premain, orate);
+ System.out.print(mini + " ");
+ premain -= mini;
+ System.out.print(premain + " ");
+ System.out.println(drop + " ");
+ drop = 0;
+ }
+ }
+ System.out.println("----------------------------------------------------------------------");
+ while (premain != 0) {
+ if (premain > bsize) {
+ drop = premain - bsize;
+ }
+ mini = Math.min(premain, orate);
+ System.out.print(" " + premain + " " + mini);
+ premain -= mini;
+ System.out.println(" " + premain + " " + drop);
+ drop = 0;
+ }
+ }
+}
+
+
+Tcp-server
+
+
+import java.net.*;
+import java.io.*;
+public class server {
+public static void main(String[] args) throws Exception {
+ServerSocket sersock = new ServerSocket(4000);
+System.out.println("Server ready for connection");
+Socket sock = sersock.accept();
+System.out.println("connection is successfull and waiting to serve");
+InputStream istream = sock.getInputStream();
+BufferedReader fileRead = new BufferedReader(new 
+InputStreamReader(istream));
+String fname = fileRead.readLine();
+BufferedReader contentRead = new BufferedReader(new FileReader(fname));
+OutputStream ostream = sock.getOutputStream();
+PrintWriter pwrite = new PrintWriter(ostream, true);
+String str;
+while ((str = contentRead.readLine()) != null) {
+pwrite.println(str);
+}
+}
+}
+
+
+Tcp-Client
+
+
+import java.net.*;
+import java.io.*;
+public class client{
+public static void main(String args[])throws Exception
+{
+Socket sock=new Socket("127.0.0.1",4000);
+System.out.println("enter the file name");
+BufferedReader keyRead= new BufferedReader(new 
+InputStreamReader(System.in));
+String fname=keyRead.readLine();
+OutputStream ostream=sock.getOutputStream();
+PrintWriter pwrite=new PrintWriter(ostream,true);
+pwrite.println(fname);
+InputStream istream=sock.getInputStream();
+BufferedReader SocketRead=new BufferedReader(new 
+InputStreamReader(istream));
+String str;
+while((str=SocketRead.readLine())!=null)
+{
+System.out.println(str);
+pwrite.close();
+SocketRead.close();
+keyRead.close();
+}
+}
+}
+
+
+4.UDP-server
+
+
+import java.io.*;
+import java.net.*;
+class server {
+public static void main(String args[]) throws Exception {
+DatagramSocket serversocket = new DatagramSocket(9876);
+BufferedReader br = new BufferedReader(new 
+InputStreamReader(System.in));
+byte[] receivedData = new byte[1024];
+byte[] sendData = new byte[1024];
+DatagramPacket receivePacket = new DatagramPacket(receivedData, 
+receivedData.length);
+serversocket.receive(receivePacket);
+String sentence = new String(receivePacket.getData());
+System.out.println("RECIEVED :" + sentence);
+InetAddress IPaddress = receivePacket.getAddress();
+int port = receivePacket.getPort();
+System.out.println("enter the message");
+String data = br.readLine();
+sendData = data.getBytes();
+DatagramPacket sendPacket = new DatagramPacket(sendData, 
+sendData.length, IPaddress, port);
+serversocket.send(sendPacket);
+serversocket.close();
+}
+}
+
+UDP-client
+
+import java.io.*;
+import java.net.*;
+class client {
+public static void main(String args[]) throws Exception {
+BufferedReader in = new BufferedReader(new 
+InputStreamReader(System.in));
+DatagramSocket clientsocket = new DatagramSocket();
+InetAddress IPaddress = InetAddress.getByName("localhost");
+byte[] sendData = new byte[1024];
+byte[] recieveData = new byte[1024];
+String sentence = "hello server";
+sendData = sentence.getBytes();
+DatagramPacket sendPacket = new DatagramPacket(sendData, 
+sendData.length, IPaddress, 9876);
+clientsocket.send(sendPacket);
+DatagramPacket receivePacket = new DatagramPacket(recieveData, 
+recieveData.length);
+clientsocket.receive(receivePacket);
+String modifiedsentence = new String(receivePacket.getData());
+System.out.println("from server " + modifiedsentence);
+clientsocket.close();
+}
+}
